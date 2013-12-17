@@ -20,23 +20,23 @@ using Color
 randstr(n::Int) = [randstring() for i = 1:n]
 randint(n::Int) = rand(1:n,n)
 
-randfns = (Type=>Function)[Int => randint, 
+randfns = (Type=>Function)[Int => randint,
                            Int32 => x->int32(randint(x)),
-                           Int64 => x->int64(randint(x)), 
+                           Int64 => x->int64(randint(x)),
                            Int128 => x->int128(randint(x)),
-                           Float32 => x->float32(rand(x)), 
-                           Float64 => rand, 
+                           Float32 => x->float32(rand(x)),
+                           Float64 => rand,
                            String => randstr]
 
 std_types = [Int, Float64, String]
 sort_algs = [InsertionSort, HeapSort, MergeSort, QuickSort, RadixSort, TimSort] #, TimSortUnstable]
 
 # DataFrame labels
-labels = ["test_type", "sort_alg", "log_size", "size", "*sort", 
+labels = ["test_type", "sort_alg", "log_size", "size", "*sort",
           "\\sort", "/sort", "3sort", "+sort", "~sort", "=sort", "!sort"]
 
 # Corresponding descriptions
-sort_descr = [ '*' => "random", 
+sort_descr = [ '*' => "random",
                '\\' => "reversed",
                '/' => "sorted",
                '3' => "3 exchanges",
@@ -53,9 +53,9 @@ function _sortperf(alg::Algorithm, origdata::Vector, order::Ordering=Forward; re
     n = length(origdata)
     logn = log2(length(origdata))
 
-    rec = {"test_type" => string(eltype(origdata)), 
-           "sort_alg" => string(alg)[1:end-5], 
-           "log_size" => isinteger(logn) ? int(logn) : logn, 
+    rec = {"test_type" => string(eltype(origdata)),
+           "sort_alg" => string(alg)[1:end-5],
+           "log_size" => isinteger(logn) ? int(logn) : logn,
            "size" => length(origdata)}
 
     if alg==RadixSort && !isbits(origdata[1])
@@ -134,7 +134,7 @@ function _sortperf(alg::Algorithm, origdata::Vector, order::Ordering=Forward; re
         @assert issorted(data1, order)
 
         ## quicksort median killer: first half descending, second half ascending
-        if skip_median_killer || alg==QuickSort && !(eltype(data) <: Integer) && length(data) >= 2^18
+        if skip_median_killer || (alg==OldQuickSort || alg==QuickSort) && !(eltype(data) <: Integer) && length(data) >= 2^18
             print("(median killer skipped) ")
         else
             last = (length(data)>>1)<<1 # make sure data length is even
@@ -206,9 +206,9 @@ sortperf(args...; named...) = DataFrame(_sortperf(args...; named...), labels)
 # Get median sort timings
 sort_median(df::DataFrame) = groupby(df, ["log_size", "size", "sort_alg", "test_type"]) |> :median
 
-sort_scale(df::DataFrame, base_sort) = by(df, ["log_size", "size", "test_type"], 
+sort_scale(df::DataFrame, base_sort) = by(df, ["log_size", "size", "test_type"],
                                           x->(row = find(x["sort_alg"] .== base_sort);
-                                              ht = size(x,1); 
+                                              ht = size(x,1);
                                               hcat(x[:,3:3],x[:,5:end]./vcat(rep(x[row,5:end],ht)...))))
 
 # Create sort plots
@@ -266,11 +266,11 @@ end
 
 # Save plots
 save_sort_plots(plots, pdffile="sortperf.pdf") = file(plots, pdffile)
-#save_sort_plots(df::DataFrame, pdffile="sortperf.pdf") = 
+#save_sort_plots(df::DataFrame, pdffile="sortperf.pdf") =
 #    save_sort_plots(sort_plots(sort_median(df), ["*sort_median", "\\sort_median", "/sort_median", "3sort_median",
 #                                                 "+sort_median", "~sort_median", "=sort_median", "!sort_median"]),
 #                               pdffile)
-save_sort_plots(df::DataFrame, base_sort, pdffile="sortperf.pdf") = 
+save_sort_plots(df::DataFrame, base_sort, pdffile="sortperf.pdf") =
     save_sort_plots(sort_plots(sort_scale(sort_median(df), base_sort), base_sort), pdffile)
 
 function view_sort_plots(plots)
@@ -281,9 +281,9 @@ end
 
 # Test standard sort functions
 function std_sort_tests(;sort_algs=SortPerf.sort_algs, types=SortPerf.std_types, range=6:20, replicates=3,
-                        lt::Function=isless, by::Function=identity, rev::Bool=false, order::Ordering=Forward, 
+                        lt::Function=isless, by::Function=identity, rev::Bool=false, order::Ordering=Forward,
                         save::Bool=false, prefix="sortperf", skip_median_killer=false, base_sort="QuickSort")
-    sort_times = sortperf(sort_algs, types, range, ord(lt,by,rev,order); 
+    sort_times = sortperf(sort_algs, types, range, ord(lt,by,rev,order);
                           replicates=replicates, skip_median_killer=skip_median_killer)
 
     if save
