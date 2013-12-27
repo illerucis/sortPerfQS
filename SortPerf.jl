@@ -10,7 +10,6 @@ export sortperf, sort_plots, view_sort_plots, save_sort_plots, std_sort_tests, s
 import Base.Sort: Algorithm, Forward, ReverseOrdering, ord
 import Base.Order.Ordering
 
-
 using SortingAlgorithms
 using DataFrames
 using Winston
@@ -58,22 +57,27 @@ function _sortperf(alg::Algorithm, origdata::Vector, order::Ordering=Forward; re
            "log_size" => isinteger(logn) ? int(logn) : logn,
            "size" => length(origdata)}
 
-    if alg==RadixSort && !isbits(origdata[1])
-        println("Skipping RadixSort for non bitstype $(eltype(origdata))")
-        reptimes = Dict{String, Float64}()
-        for label in labels[5:end]
-            reptimes[label] = 0.0
-        end
-        return times
+    # if alg==RadixSort && !isbits(origdata[1])
+    #     println("Skipping RadixSort for non bitstype $(eltype(origdata))")
+    #     reptimes = Dict{String, Float64}()
+    #     for label in labels[5:end]
+    #         reptimes[label] = 0.0
+    #     end
+    #     return times
+    # end
+
+    function cons(t...)
+        times = [t...]
     end
 
-    for rep = 1:replicates
+    times = @parallel (cons) for rep = 1:replicates
         print(" $rep")
         reptimes = Dict{String, Float64}()
 
         ## Random
         data = copy(origdata)
         gc()
+
         if !issorted(data, order)
             reptimes["*sort"] = @elapsed sort!(data, alg, order)
             @assert issorted(data, order)
@@ -86,7 +90,7 @@ function _sortperf(alg::Algorithm, origdata::Vector, order::Ordering=Forward; re
 
         ## Reverse sorted
         reverse!(data)
-        @assert issorted(data, ReverseOrdering(order))
+        # @assert issorted(data, ReverseOrdering(order))
         gc()
         reptimes["\\sort"] = @elapsed sort!(data, alg, order)
         @assert issorted(data, order)
@@ -143,12 +147,11 @@ function _sortperf(alg::Algorithm, origdata::Vector, order::Ordering=Forward; re
             reptimes["!sort"] = @elapsed sort!(qdata, alg, order)
             @assert issorted(qdata, order)
         end
-
-        push!(times, merge(rec, reptimes))
+        merge(rec, reptimes)
     end
-    println()
+    # println()
 
-    times
+    # times
 end
 
 # run sortperf over a range of data lengths
