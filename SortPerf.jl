@@ -12,7 +12,7 @@ import Base.Order.Ordering
 
 using SortingAlgorithms
 using DataFrames
-using Winston
+# using Winston
 using Color
 
 # rand functions for testing
@@ -278,7 +278,8 @@ save_sort_plots(df::DataFrame, base_sort, pdffile="sortperf.pdf") =
 
 function view_sort_plots(plots)
     for p in plots
-        Winston.display(p)
+        x = 1
+        # Winston.display(p)
     end
 end
 
