@@ -12,7 +12,7 @@ import Base.Order.Ordering
 
 using SortingAlgorithms
 using DataFrames
-# using Winston
+using Winston
 using Color
 
 # rand functions for testing
@@ -263,23 +263,21 @@ function sort_plots(df, base_sort, cols = ["*sort_median", "\\sort_median", "/so
             push!(plots, plt)
         end
     end
-
     plots
 end
 
 # Save plots
 save_sort_plots(plots, pdffile="sortperf.pdf") = file(plots, pdffile)
-#save_sort_plots(df::DataFrame, pdffile="sortperf.pdf") =
-#    save_sort_plots(sort_plots(sort_median(df), ["*sort_median", "\\sort_median", "/sort_median", "3sort_median",
-#                                                 "+sort_median", "~sort_median", "=sort_median", "!sort_median"]),
-#                               pdffile)
+save_sort_plots(df::DataFrame, pdffile="sortperf.pdf") =
+   save_sort_plots(sort_plots(sort_median(df), ["*sort_median", "\\sort_median", "/sort_median", "3sort_median",
+                                                "+sort_median", "~sort_median", "=sort_median", "!sort_median"]),
+                              pdffile)
 save_sort_plots(df::DataFrame, base_sort, pdffile="sortperf.pdf") =
     save_sort_plots(sort_plots(sort_scale(sort_median(df), base_sort), base_sort), pdffile)
 
 function view_sort_plots(plots)
     for p in plots
-        x = 1
-        # Winston.display(p)
+        Winston.display(p)
     end
 end
 
